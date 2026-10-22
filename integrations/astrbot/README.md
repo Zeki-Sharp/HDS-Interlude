@@ -1,5 +1,7 @@
 # AstrBot personal companion integration 0.2.0
 
+Bridge patch 0.2.1 restores the original slash only when AstrBot's wake-prefix stage demonstrably removed it. This keeps management commands (including state inspection and memory utility commands) out of ordinary narration. Host/engine integration remains 0.2.0. Regression: `python astrbot_plugin_hdsi_bridge/test_command_routing.py`; these isolated handler checks do not claim a new QQ client receipt.
+
 This fork starts at upstream `9bdd5ac776dd682911edb9b48d1e7eaedd720dbe` (1.0.1-rc57). Original copyright and AGPL-3.0 license remain intact. Integration code is distributed under the same license. This is a custom AstrBot/official QQ private-message adapter, not an unmodified upstream release or a general plug-and-play AstrBot plugin.
 
 The engine, loopback host and bridge live in this fork. Character profiles, user memories, credentials, platform IDs, local release orchestration and runtime databases belong outside this repository. Never commit them. The bridge currently expects the deployment's `astrbot_plugin_personal_memory` identity/recall/store interface and `astrbot_plugin_xiaolu_suffix` formatter; it is not a replacement for those plugins. Their source is not included here.

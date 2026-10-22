@@ -9,8 +9,9 @@ from astrbot.api.star import Context, Star, StarTools, register
 from astrbot.api.web import request
 from .memory_guard import exclusions
 from .music_share import describe_share
+from .command_text import restore_command_prefix
 
-@register('astrbot_plugin_hdsi_bridge','Zeki-Sharp','Scoped HDSI private transport','0.2.0')
+@register('astrbot_plugin_hdsi_bridge','Zeki-Sharp','Scoped HDSI private transport','0.2.1')
 class HDSIBridge(Star):
     def __init__(self,context:Context,config:AstrBotConfig):
         super().__init__(context);self.context=context;self.config=config;self.task=None;self.error=None
@@ -32,7 +33,7 @@ class HDSIBridge(Star):
         try:state=await self.host('/health')
         except Exception:state={'ready':False}
         old=self.plugin('astrbot_plugin_proactive_chat')
-        return {'status':'ok','data':{'version':'0.2.0','enabled':self.config.get('enabled',False),'host':state,'error':self.error,'groups':False,
+        return {'status':'ok','data':{'version':'0.2.1','enabled':self.config.get('enabled',False),'host':state,'error':self.error,'groups':False,
           'poll_running':bool(self.task and not self.task.done()),'legacy_proactive_target_enabled':bool(old and old._get_session_config(self.config.get('scope','')))}}
     async def memory_test(self):
         if not self.config.get('simulation_enabled',False):return {'status':'error','message':'Simulation disabled'}
@@ -87,7 +88,7 @@ class HDSIBridge(Star):
     @filter.event_message_type(filter.EventMessageType.ALL,priority=1200)
     async def receive(self,event:AstrMessageEvent):
         if not await self.selected(event):return
-        text=event.message_str or ''
+        text=restore_command_prefix(event.message_str,getattr(event.message_obj,'message_str',''))
         if text.startswith('/幕间'):
             event.stop_event()
             command=text.removeprefix('/幕间').strip()
