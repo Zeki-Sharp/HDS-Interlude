@@ -239,6 +239,7 @@ export interface MemoryConfig {
     /** Cooldown between stable overlay changes on the same target/path. */
     statePatchCooldownHours?: number;
     autoApplyStatePatches: boolean;
+    autoApplyPaths?: string[];
     allowMajorStateChanges: boolean;
     maxFactsPerStory: number;
     /** Keep short-lived dramatic aftereffects as context for later writing. */
@@ -880,6 +881,8 @@ export declare class InterludeService extends Service {
      * (否则关闭自动应用后提案没有任何出口)。批准后立即重建 overlay——
      * 统一语义下 overlay=未压缩 applied 补丁的合并,效果即时可见。 */
     applyAdminStatePatch(story: InterludeStory, id: number): Promise<boolean>;
+    /** Revoke a recent applied proposal while preserving its evidence. */
+    revokeAdminStatePatch(story: InterludeStory, id: number): Promise<boolean>;
     /** Clear only the evolving setting overlay; keep Canon, script and memories. */
     clearSettingOverlay(story: InterludeStory, target: 'character' | 'perspective' | 'relationship' | 'world' | 'all'): Promise<{
         participantCount: number;

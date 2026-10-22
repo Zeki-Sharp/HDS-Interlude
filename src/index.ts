@@ -361,6 +361,7 @@ const Memory: Schema<MemoryConfig> = Schema.object({
   semanticWeight: Schema.number().min(0).max(2).default(0.55).description('启用 Embedding 后的语义相关度权重。'),
   unresolvedWeight: Schema.number().min(0).max(2).default(0.2).description('未解决事项的额外排序权重。'),
   autoApplyStatePatches: Schema.boolean().default(true).description('是否自动应用达到门槛的设定演化建议。关闭后提案不再自动应用——需用 interlude.memory.apply 逐条手动批准,否则会持续停留在待积累状态。'),
+  autoApplyPaths: Schema.array(Schema.string()).default([]).description('自动演化路径白名单，如 character.preferences。空列表沿用上游全部路径；不在白名单的提案保留为候选。'),
   allowMajorStateChanges: Schema.boolean().default(true).description('是否允许自动应用重大人物或世界状态变更。关闭后 major 提案会停留在待积累状态(不算被拒绝),同样可用 interlude.memory.apply 手动批准。'),
   activeConsequencesEnabled: Schema.boolean().default(true).description('启用“剧情余波”：让确实影响后续生活的谈话或事件，在之后的写作中持续发挥短期作用。关闭后不会新增或注入余波。'),
   activeConsequencePromptLimit: Schema.natural().min(1).max(20).default(6).description('单次主叙事写作最多携带几条仍在生效的剧情余波。数值越高，连续性更强，但会增加少量上下文。'),

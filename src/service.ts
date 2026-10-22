@@ -521,6 +521,8 @@ export interface MemoryConfig {
   /** Cooldown between stable overlay changes on the same target/path. */
   statePatchCooldownHours?: number
   autoApplyStatePatches: boolean
+  /** Optional allowlist of target.dimension for automatic development. Empty preserves upstream behavior. */
+  autoApplyPaths?: string[]
   allowMajorStateChanges: boolean
   maxFactsPerStory: number
   /** Keep short-lived dramatic aftereffects as context for later writing. */
@@ -2109,6 +2111,18 @@ export class InterludeService extends Service {
     await this.dbSet('interlude_state_patch', { id }, { status: 'applied', appliedAt: now })
     await this.rebuildLiveOverlayState(story, now)
     return true
+  }
+
+  /** Revoke a recent, uncompressed development proposal without changing original evidence. */
+  async revokeAdminStatePatch(story: InterludeStory, id: number) {
+    this.invalidateBufferedNarratives(story.id)
+    return this.serial(story.id, async () => {
+      const patch = (await this.dbGet('interlude_state_patch', { id, storyId: story.id, status: 'applied' }))[0]
+      if (!patch) return false
+      await this.dbSet('interlude_state_patch', { id }, { status: 'cleared' })
+      await this.rebuildLiveOverlayState(await this.getStory(story.id), new Date())
+      return true
+    })
   }
 
   /** Clear only the evolving setting overlay; keep Canon, script and memories. */
@@ -11049,7 +11063,7 @@ export class InterludeService extends Service {
     const path = dimension ? `development.${dimension}` : ''
     const sourceEntryIds = (draft.sourceEntryIds ?? []).filter(id => entries.some(entry => entry.id === id)).slice(0, 20)
     const proposedValue = clip(draft.proposedValue, 4_000)
-    const impact = draft.impact === 'major' ? 'major' : 'minor'
+    let impact = draft.impact === 'major' ? 'major' : 'minor'
     if (!path || !proposedValue || !sourceEntryIds.length) return
     // Relationship observations must remain in their named branch; private
     // material cannot become a global personality or world change.
@@ -11087,6 +11101,8 @@ export class InterludeService extends Service {
     if (draft.contradictsProposalIds?.length) return
     if (matching.some(candidate => candidate.status === 'applied' || candidate.status === 'compacted')) return
     const candidate = matching.find(item => item.status === 'proposed')
+    // A later minor draft cannot downgrade an existing major proposal.
+    if (candidate?.impact === 'major') impact = 'major'
     const mergedSourceEntryIds = Array.from(new Set([
       ...(candidate?.sourceEntryIds ?? []), ...sourceEntryIds,
     ])).slice(0, 80)
@@ -11122,6 +11138,8 @@ export class InterludeService extends Service {
     // lets a long-lived everyday scene accumulate gradual evidence; major
     // changes retain the stricter independent-scene safeguard below.
     if (!receptionSupported) return
+    const automaticPaths = this.memoryConfig.autoApplyPaths ?? []
+    if (automaticPaths.length && !automaticPaths.includes(`${draft.target}.${dimension}`)) return
     if (!candidate || !hasNewEvidence || !this.memoryConfig.autoApplyStatePatches || (impact === 'major' && !this.memoryConfig.allowMajorStateChanges)) return
     const majorMinScenes = Math.max(1, this.memoryConfig.statePatchMajorMinScenes ?? 2)
     const stableEvidence = impact === 'major'
